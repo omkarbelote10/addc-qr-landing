@@ -214,7 +214,7 @@ Current nodes include:
 * `vision_tracker_node`
 ```
 
-
+---
 
 # System Architecture & Data Flow
 
@@ -230,7 +230,7 @@ Current nodes include:
 
 6. **ArduPilot** receives the commands through MAVLink and performs the low-level flight control of the drone.
 
-
+---
 
 # Current State
 
