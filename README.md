@@ -219,9 +219,9 @@ Current nodes include:
 
 2. **`ros_gz_bridge`** converts the Gazebo image message (`gz.msgs.Image`) into a ROS 2 image message (`sensor_msgs/msg/Image`). The camera topic is remapped to `/camera/image_raw`.
 
-3. **Vision Tracker** subscribes to `/camera/image_raw`, processes the image using OpenCV, detects the QR code, and publishes its center pixel coordinates `(x, y)` on `/target_pixel`.
+3. **Vision Tracker Node** subscribes to `/camera/image_raw`, processes the image using OpenCV, detects the QR code, and publishes its center pixel coordinates `(x, y)` on `/target_pixel`.
 
-4. **Mission Controller** subscribes to `/target_pixel` and MAVROS telemetry/state topics to obtain the target position, drone pose, connection state, armed state, and flight mode. It uses a state machine to manage the mission and sends velocity, arm/disarm, and mode commands through MAVROS.
+4. **Mission Controll Node** subscribes to `/target_pixel` and MAVROS telemetry/state topics to obtain the target position, drone pose, connection state, armed state, and flight mode. It uses a state machine to manage the mission and sends velocity, arm/disarm, and mode commands through MAVROS.
 
 5. **MAVROS** acts as the ROS 2 ↔ MAVLink interface between the Mission Controller and ArduPilot, providing telemetry to ROS 2 and forwarding commands to the flight controller.
 
