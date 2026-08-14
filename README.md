@@ -1,5 +1,5 @@
-# AeronitK ADDC — Autonomous QR Detection & Precision Landing
-Autonomous QR-code search, scan and land.
+# AeronitK ADDC — Autonomous QR Detection & Precision Landing:
+Autonomous QR-code search, align, scan and land.
 
 # 1. Project Overview
 The objective of this project is to develop an autonomous drone system capable  
