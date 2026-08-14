@@ -213,7 +213,7 @@ Current nodes include:
 
 
 
-## System Architecture & Data Flow
+# System Architecture & Data Flow
 
 1. **Gazebo** simulates the drone and publishes the downward-facing camera feed as `gz.msgs.Image`.
 
