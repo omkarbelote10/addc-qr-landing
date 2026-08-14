@@ -89,7 +89,6 @@ addc-qr-landing/
 ## Requirements
 
 Currently the development environment uses:
-
 * Ubuntu 24.04
 * ROS 2 Jazzy
 * Gazebo Sim
@@ -101,7 +100,7 @@ Currently the development environment uses:
 * OpenCV
 * NumPy
 
-### Simulation Models / World (from ardupilot gz plugin):
+Simulation Models / World (from ardupilot gz plugin):
 * iris_with_down_camera.sdf
 * iris_runway.sdf
 
