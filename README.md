@@ -162,6 +162,8 @@ Before running the project, source ROS 2 and the workspace:
 source /opt/ros/jazzy/setup.bash
 source ~/aeronitk/addc-qr-landing/install/setup.bash
 ```
+Dont forget to add any red coloured object such as  
+red cylinder near the drone as a target.
 
 ---
 
