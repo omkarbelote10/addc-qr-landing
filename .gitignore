@@ -1,0 +1,23 @@
+# Ros generated files
+build/
+install/
+log/
+
+# Python generated files
+__pycache__/
+*.pyc
+
+# Python virtual environments
+.venv/
+venv/
+
+# Environment / secret files
+.env
+
+# IDE files
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+Thumbs.db
