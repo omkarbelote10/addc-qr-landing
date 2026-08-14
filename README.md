@@ -242,7 +242,6 @@ Current nodes include:
 
 * 🔴 GPS error simulation
 * 🔴 Search algorithm to compensate for the ~4 m GPS error
-* 🔴 Integration of the QR detection pipeline with the existing vision landing controller
 * 🔴 Replacing the current red-cylinder detection with the QR-based target pipeline
 
 
