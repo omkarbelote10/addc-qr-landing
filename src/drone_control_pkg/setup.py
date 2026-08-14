@@ -14,7 +14,7 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         ('share/' + package_name + '/launch',
-            ['landing.launch.py']),
+            ['launch/landing.launch.py']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,

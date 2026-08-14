@@ -67,7 +67,6 @@ class MissionPlannerNode(Node):
         # creating timer
         self.timer = self.create_timer(0.05, self.control_loop)
 
-
     def state_cb(self, msg):
         self.current_state = msg
 
