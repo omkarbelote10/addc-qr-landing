@@ -100,13 +100,14 @@ Currently the development environment uses:
 * OpenCV
 * NumPy
 
+
 Simulation Models / World (from ardupilot gz plugin):
 * iris_with_down_camera.sdf
 * iris_runway.sdf
 
 ---
 
-## Clone the Repository
+## i.Clone the Repository
 
 ```bash
 git clone https://github.com/omkarbelote10/addc-qr-landing.git
@@ -115,7 +116,7 @@ cd addc-qr-landing
 
 ---
 
-## Install ROS Dependencies
+## ii.Install ROS Dependencies
 
 From the repository root:
 
@@ -125,7 +126,7 @@ rosdep install --from-paths src --ignore-src -r -y
 
 ---
 
-## Build
+## iii.Build
 
 ```bash
 colcon build --symlink-install
@@ -139,7 +140,7 @@ source install/setup.bash
 
 ---
 
-## Verify the Package
+## iv.Verify the Package
 
 ```bash
 ros2 pkg list | grep drone_control_pkg
@@ -164,30 +165,28 @@ source ~/aeronitk/addc-qr-landing/install/setup.bash
 
 ---
 
-## Simulation Setup & Launch
-
 Start the following components in **separate terminals**.
 
-### 1. ArduPilot SITL
+### i. ArduPilot SITL
 
 ```bash
 cd ~/ardupilot/ArduCopter
 ../Tools/autotest/sim_vehicle.py -v ArduCopter -f JSON:127.0.0.1:9002 --console -N
 ```
 
-### 2. Gazebo
+### ii. Gazebo
 
 ```bash
 gz sim -r iris_runway.sdf
 ```
 
-### 3. MAVROS
+### iii. MAVROS
 
 ```bash
 ros2 launch mavros apm.launch fcu_url:="udp://127.0.0.1:14550@"
 ```
 
-### 4. Gazebo ↔ ROS 2 Bridge
+### iv. Gazebo ↔ ROS 2 Bridge
 
 ```bash
 ros2 run ros_gz_bridge parameter_bridge \
@@ -196,7 +195,7 @@ ros2 run ros_gz_bridge parameter_bridge \
 -r /world/iris_runway/model/iris_with_down_camera/link/down_camera_link/sensor/camera/image:=/camera/image_raw
 ```
 
-### 5. Launch the Mission
+### v. Launch the Mission
 
 After the simulation components are running:
 
