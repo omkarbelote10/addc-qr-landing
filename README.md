@@ -1,4 +1,4 @@
-# ADDC QR Landing
+# AeronitK ADDC — Autonomous QR Detection & Precision Landing
 Autonomous QR-code search, scan and land.
 
 # 1. Project Overview
