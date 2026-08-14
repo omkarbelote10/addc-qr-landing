@@ -1,7 +1,7 @@
 # ADDC QR Landing
 Autonomous QR-code search, scan and land.
 
-## 1. Project Overview
+# 1. Project Overview
 The objective of this project is to develop an autonomous drone system capable  
 of navigating to a target using its approximate GPS coordinates, searching for  
 a QR code despite GPS error, localizing the QR code using computer vision,  
@@ -154,7 +154,7 @@ drone_control_pkg
 
 ---
 
-# 9. Running the Project
+# 5. Running the Project
 
 Before running the project, source ROS 2 and the workspace:
 
@@ -231,13 +231,13 @@ Current nodes include:
 
 
 
-## Current State
+# Current State
 
 * 🟢 Implemented State machine with appropriate state switching.
 * 🟢 Drone aligns itself above the detected target
 * 🟢 Current vision planner detects the **red cylinder** and performs vision-based landing
 
-## Not Implemented
+# Not Implemented
 
 * 🔴 GPS error simulation
 * 🔴 Search algorithm to compensate for the ~4 m GPS error
