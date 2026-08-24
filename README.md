@@ -204,15 +204,17 @@ After the simulation components are running:
 
 ```bash
 source ~/aeronitk/addc-qr-landing/install/setup.bash
-ros2 launch drone_control_pkg landing.launch.py
+ros2 launch drone_control_pkg landing.launch.py target_lat:=-35.3632171 target_lon:=149.1652704
+```
 
 The landing launch file is intended to start the nodes required for the autonomous landing pipeline.
+(please pass appropriate target coordinates to the launch file)
 
 Current nodes include:
 
 * `mission_control_node`
 * `vision_tracker_node`
-```
+
 
 ---
 
