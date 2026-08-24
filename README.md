@@ -204,15 +204,17 @@ After the simulation components are running:
 
 ```bash
 source ~/aeronitk/addc-qr-landing/install/setup.bash
-ros2 launch drone_control_pkg landing.launch.py
+ros2 launch drone_control_pkg landing.launch.py target_lat:=-35.3632171 target_lon:=149.1652704
+```
 
 The landing launch file is intended to start the nodes required for the autonomous landing pipeline.
+(please pass appropriate target coordinates to the launch file)
 
 Current nodes include:
 
 * `mission_control_node`
 * `vision_tracker_node`
-```
+
 
 ---
 
@@ -231,6 +233,61 @@ Current nodes include:
 6. **ArduPilot** receives the commands through MAVLink and performs the low-level flight control of the drone.
 
 ---
+
+
+## Mission State Machine
+
+The node is driven by a single-threaded, timer-based (20 Hz) state machine (`MissionState` enum) executed in `control_loop()`. Each state is polled on every timer tick until its exit condition is met.
+
+| State | Purpose | Exit Condition |
+|---|---|---|
+| `WAIT_FOR_CONNECTIONM` | Waits for a live MAVROS↔FCU heartbeat | `/mavros/state.connected == True` |
+| `SET_GUIDED_MODE` | Requests `GUIDED` flight mode via `/mavros/set_mode` | `/mavros/state.mode == "GUIDED"` |
+| `ARM` | Sends an arm request via `/mavros/cmd/arming` | `/mavros/state.armed == True` |
+| `TAKEOFF` | Calls `/mavros/cmd/takeoff` to climb to `takeoff_height` | Local pose `z ≥ takeoff_height - 0.2`. Also locks the current yaw (`target_orientation`) to be held for the rest of the mission |
+| `NAVIGATE_TO_TARGET` | Continuously publishes a global GPS setpoint (`/mavros/setpoint_position/global`) toward `(target_lat, target_lon, target_alt)` | Horizontal great-circle-approx distance to target `≤ navigation_threshold` (0.5 m) |
+| `SEARCH_TARGET` | Hovers (zero velocity) while checking `/target_pixel` for a valid detection | Target detected → `ALIGN_TARGET`. No target for `> 5 s` → commands `LAND` mode and moves to `FINISHED` |
+| `ALIGN_TARGET` | Centers the vehicle over the detected target using pixel-space PID (`vx`, `vy` from image error) | Error stays within `center_threshold` for `≥ 1 s` → `DESCEND`. Target lost → back to `SEARCH_TARGET` |
+| `DESCEND` | Continues horizontal PID correction while commanding a fixed downward velocity (`vz = -0.20 m/s`) | Local `z < 1.0 m` → `LAND`. Re-misaligned beyond threshold → back to `ALIGN_TARGET`. Target lost → `SEARCH_TARGET` |
+| `LAND` | Commands `LAND` flight mode via `/mavros/set_mode` | Local `z ≤ 0.5 m` → `FINISHED` |
+| `FINISHED` | Terminal state; logs completion, no further action | — |
+
+### Flow diagram
+
+```
+WAIT_FOR_CONNECTIONM
+        │ connected
+        ▼
+ SET_GUIDED_MODE
+        │ mode == GUIDED
+        ▼
+      ARM
+        │ armed
+        ▼
+   TAKEOFF
+        │ z ≥ takeoff_height
+        ▼
+NAVIGATE_TO_TARGET ◄────────────┐
+        │ distance ≤ threshold  │
+        ▼                       │
+ SEARCH_TARGET ──(target seen)──┘? (see note)
+   │        │
+   │ 5s no  │ target seen
+   │ target │
+   ▼        ▼
+FINISHED  ALIGN_TARGET ◄──┐
+  ▲          │            │ misaligned
+  │          │ centered   │
+  │          ▼ 1s         │
+  │       DESCEND ─────────┘
+  │          │  target lost
+  │          ▼ z < 1.0
+  │        LAND
+  │          │ z ≤ 0.5
+  └──────────┘
+```
+
+
 
 # Current State
 
