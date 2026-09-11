@@ -26,6 +26,15 @@ class MissionPlannerNode(Node):
         self.takeoff_height = 10.0
         self.home_altitude = None
 
+        # spiral search state
+        self.search_start_time = None
+        self.search_center_x = None
+        self.search_center_y = None
+        self.spiral_angular_speed = 0.3   # rad/s
+        self.spiral_growth_rate = 0.15    # m per radian
+        self.max_search_radius = 5.0      # m — primary stop condition
+        self.max_search_time = 60.0       # s — pure safety failsafe, not the normal exit
+
         # GPS target Coordinates
         self.declare_parameter('target_lat', 0.0)
         self.declare_parameter('target_lon', 0.0)
@@ -217,24 +226,58 @@ class MissionPlannerNode(Node):
         elif self.state == MissionState.SEARCH_TARGET:
             if self.target_available:
                 self.get_logger().info("Target detected, switching to Align mode")
+                self.search_start_time = None
                 self.state = MissionState.ALIGN_TARGET
-            else:
-                self.get_logger().info("Target not detected")
+                return
+        
+            now = time.time()
+        
+            if self.search_start_time is None:
+                self.search_start_time = now
+                self.search_center_x = self.current_pose.pose.position.x
+                self.search_center_y = self.current_pose.pose.position.y
+                self.get_logger().info("Starting spiral search")
+        
+            elapsed = now - self.search_start_time
+        
+            theta = self.spiral_angular_speed * elapsed
+            r = self.spiral_growth_rate * theta
+        
+            # PRIMARY exit condition: radius reached
+            if r >= self.max_search_radius:
+                self.get_logger().info(f"Spiral reached {self.max_search_radius}m radius, target not found, landing")
                 self.send_velocity(0.0, 0.0, 0.0)
-
-                if self.target_last_seen is None:
-                    self.target_last_seen = time.time()
-                if time.time() - self.target_last_seen > 5.0:
-                    self.get_logger().info("Target lost for more than 5 sec")
-                    if not self.takeoff_client.wait_for_service(timeout_sec = 1.0):
-                        self.get_logger().info("Land service not available ")
-
-                    if not self.cmd_sent:
-                        request = SetMode.Request()
-                        request.custom_mode = "LAND"
-                        future = self.mode_client.call_async(request)
-                        self.state = MissionState.FINISHED
-                        self.cmd_sent = True
+                if not self.cmd_sent:
+                    request = SetMode.Request()
+                    request.custom_mode = "LAND"
+                    future = self.mode_client.call_async(request)
+                    self.state = MissionState.LAND
+                    self.cmd_sent = True
+                return
+        
+            # SAFETY-NET exit condition: shouldn't normally trigger, catches stuck/slow spirals
+            if elapsed > self.max_search_time:
+                self.get_logger().warn("Search safety timeout hit before reaching max radius — check spiral tuning")
+                self.send_velocity(0.0, 0.0, 0.0)
+                if not self.cmd_sent:
+                    request = SetMode.Request()
+                    request.custom_mode = "LAND"
+                    future = self.mode_client.call_async(request)
+                    self.state = MissionState.LAND
+                    self.cmd_sent = True
+                return
+        
+            a = self.spiral_growth_rate
+            w = self.spiral_angular_speed
+            vx = a * w * math.cos(theta) - r * w * math.sin(theta)
+            vy = a * w * math.sin(theta) + r * w * math.cos(theta)
+        
+            MAX_SEARCH_SPEED = 0.4
+            vx = max(min(vx, MAX_SEARCH_SPEED), -MAX_SEARCH_SPEED)
+            vy = max(min(vy, MAX_SEARCH_SPEED), -MAX_SEARCH_SPEED)
+        
+            self.get_logger().info(f"Spiral search: r={r:.2f}m / {self.max_search_radius}m, vx={vx:.2f}, vy={vy:.2f}")
+            self.send_velocity(vx, vy, 0.0)
 
         elif self.state == MissionState.ALIGN_TARGET:
             if not self.target_available:

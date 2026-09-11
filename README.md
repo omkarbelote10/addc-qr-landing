@@ -127,6 +127,10 @@ rosdep install --from-paths src --ignore-src -r -y
 ---
 
 ## iii.Build
+ignore the rpi5 folder as it contains the rpi5 code
+```bash
+touch ~/aeronitk/addc-qr-landing/rpi5/COLCON_IGNORE
+```
 
 ```bash
 colcon build --symlink-install
