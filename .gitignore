@@ -2,6 +2,9 @@
 build/
 install/
 log/
+mav.tlog
+mav.tlog.raw
+simulation/ardupilot_gazebo/
 
 # Python generated files
 __pycache__/

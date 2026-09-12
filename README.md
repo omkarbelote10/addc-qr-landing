@@ -1,199 +1,108 @@
-# AeronitK ADDC — Autonomous QR Detection & Precision Landing:
-Autonomous QR-code search, align, scan and land.
+# AeronitK ADDC - Autonomous QR Detection & Precision Landing
 
-# 1. Project Overview
-The objective of this project is to develop an autonomous drone system capable  
-of navigating to a target using its approximate GPS coordinates, searching for  
-a QR code despite GPS error, localizing the QR code using computer vision,  
-scanning and extracting the qr code data and finally performing a precision  
-landing on the target.
+Autonomous QR-code search, align, scan, and land for the ADDC drone stack.
 
-The provided GPS coordinates are expected to have an error of approximately 4 m.  
-Therefore, GPS alone cannot be used and Vision Based landing is required.
+## Overview
 
+This repository contains a ROS 2 Jazzy package for precision landing using ArduPilot SITL, Gazebo Harmonic, MAVROS, `ros_gz_bridge`, OpenCV, and NumPy.
 
-# 2. Mission Objective
-
-The overall mission can be represented as:
-
-```text
-GPS Target Coordinates
-          │
-          ▼
-   Navigate to Target
-          │
-          ▼
-   Enter Search Area
-          │
-          ▼
-     Search Pattern
-          │
-          ▼
-     QR Detection
-       /       \
-    Found     Not Found
-      │           │
-      │      Continue Search
-      │           │
-      ▼           └───────┐
- QR Localization          │
-      │                   │
-      ▼                   │
- Target Alignment         |
-      |                   |
-      ▼                   |
-  scanning QR             |
-      │                   │
-      ▼                   │
- Controlled Descent       │
-      │                   │
-      ▼                   │
-     LAND ◄───────────────┘
-```
-
----
-
-
-# 3. Repository Structure
+## Repository Layout
 
 ```text
 addc-qr-landing/
-│
-├── README.md
-├── .gitignore
-│
-└── src/
+├── setup.bash
+├── run_simulation.bash
+├── scripts/
+│   ├── env.sh
+│   ├── start_ardupilot.sh
+│   ├── start_gazebo.sh
+│   ├── start_mavproxy.sh
+│   ├── start_mavros.sh
+│   └── start_ros.sh
+├── simulation/
+│   ├── worlds/iris_runway.sdf
+│   ├── models/
+│   └── ardupilot_gazebo/
+└── src/drone_control_pkg/
+    ├── package.xml
+    ├── launch/landing.launch.py
     └── drone_control_pkg/
-        │
-        ├── drone_control_pkg/
-        │   ├── __init__.py
-        │   ├── mission_control_node.py
-        │   └── vision_tracker_node.py
-        │
-        ├── launch/
-        │   ├── landing.launch.py
-        │
-        │
-        ├── resource/
-        │   └── drone_control_pkg
-        │
-        ├── test/
-        ├── package.xml
-        ├── setup.py
-        └── setup.cfg
+        ├── mission_control_node.py
+        └── vision_tracker_node.py
 ```
 
+## Setup
 
-# 4. Setup
+### Requirements
 
-## Requirements
+The project targets Ubuntu 24.04 with:
 
-Currently the development environment uses:
-* Ubuntu 24.04
 * ROS 2 Jazzy
-* Gazebo Sim
-* Python 3
+* Gazebo Harmonic
 * ArduPilot SITL
-* ArduPilot Gazebo Plugin
 * MAVROS
-* ros_gz_bridge
+* `ros_gz_bridge`
 * OpenCV
 * NumPy
 
+### One-command setup
 
-Simulation Models / World (from ardupilot gz plugin):
-* iris_with_down_camera.sdf
-* iris_runway.sdf
-
----
-
-## i.Clone the Repository
+From the repository root, run:
 
 ```bash
-git clone https://github.com/omkarbelote10/addc-qr-landing.git
-cd addc-qr-landing
+chmod +x setup.bash run_simulation.bash
+./setup.bash
 ```
 
----
+This installs the host dependencies, sources or installs ROS 2 Jazzy if needed, configures `rosdep`, installs workspace dependencies, clones the pinned ArduPilot and ArduPilot Gazebo plugin revisions, builds the plugin, and runs `colcon build --symlink-install`.
 
-## ii.Install ROS Dependencies
+## Running the Project
 
-From the repository root:
+The normal workflow is a single command:
 
 ```bash
-rosdep install --from-paths src --ignore-src -r -y
+./run_simulation.bash
 ```
 
----
-
-## iii.Build
-ignore the rpi5 folder as it contains the rpi5 code
-```bash
-touch ~/aeronitk/addc-qr-landing/rpi5/COLCON_IGNORE
-```
+Override the mission target if needed:
 
 ```bash
-colcon build --symlink-install
+./run_simulation.bash --lat -35.3632171 --lon 149.1652704
 ```
 
-After a successful build:
+`run_simulation.bash` launches ArduPilot SITL, Gazebo, MAVROS, the Gazebo-to-ROS camera bridge, and the mission launch in separate `tmux` windows when available. If `tmux` is missing, it falls back to `gnome-terminal`.
 
-```bash
-source install/setup.bash
-```
+## Manual / Debug Mode
 
----
-
-## iv.Verify the Package
-
-```bash
-ros2 pkg list | grep drone_control_pkg
-```
-
-Expected:
-
-```text
-drone_control_pkg
-```
-
----
-
-# 5. Running the Project
-
-Before running the project, source ROS 2 and the workspace:
+If you need to run components individually, source the workspace first:
 
 ```bash
 source /opt/ros/jazzy/setup.bash
 source ~/aeronitk/addc-qr-landing/install/setup.bash
 ```
----
-Dont forget to add any red coloured object such as  
-red cylinder near the drone as a target.
 
----
+Then launch the pieces manually in separate terminals.
 
-Start the following components in **separate terminals**.
-
-### i. ArduPilot SITL
+### ArduPilot SITL
 
 ```bash
-cd ~/ardupilot/ArduCopter
-../Tools/autotest/sim_vehicle.py -v ArduCopter -f JSON:127.0.0.1:9002 --console -N
+cd ~/ardupilot
+./Tools/autotest/sim_vehicle.py -v ArduCopter -f gazebo-iris --console --map
 ```
 
-### ii. Gazebo
+### Gazebo
 
 ```bash
-gz sim -r iris_runway.sdf
+gz sim -v4 ~/aeronitk/addc-qr-landing/simulation/worlds/iris_runway.sdf
 ```
 
-### iii. MAVROS
+### MAVROS
 
 ```bash
 ros2 launch mavros apm.launch fcu_url:="udp://127.0.0.1:14550@"
 ```
 
-### iv. Gazebo ↔ ROS 2 Bridge
+### Gazebo to ROS bridge
 
 ```bash
 ros2 run ros_gz_bridge parameter_bridge \
@@ -202,107 +111,40 @@ ros2 run ros_gz_bridge parameter_bridge \
 -r /world/iris_runway/model/iris_with_down_camera/link/down_camera_link/sensor/camera/image:=/camera/image_raw
 ```
 
-### v. Launch the Mission
-
-After the simulation components are running:
+### Mission launch
 
 ```bash
-source ~/aeronitk/addc-qr-landing/install/setup.bash
 ros2 launch drone_control_pkg landing.launch.py target_lat:=-35.3632171 target_lon:=149.1652704
 ```
 
-The landing launch file is intended to start the nodes required for the autonomous landing pipeline.
-(please pass appropriate target coordinates to the launch file)
+## Data Flow
 
-Current nodes include:
-
-* `mission_control_node`
-* `vision_tracker_node`
-
-
----
-
-# System Architecture & Data Flow
-
-1. **Gazebo** simulates the drone and publishes the downward-facing camera feed as `gz.msgs.Image`.
-
-2. **`ros_gz_bridge`** converts the Gazebo image message (`gz.msgs.Image`) into a ROS 2 image message (`sensor_msgs/msg/Image`). The camera topic is remapped to `/camera/image_raw`.
-
-3. **Vision Tracker Node** subscribes to `/camera/image_raw`, processes the image using OpenCV, detects the QR code, and publishes its center pixel coordinates `(x, y)` on `/target_pixel`.
-
-4. **Mission Controll Node** subscribes to `/target_pixel` and MAVROS telemetry/state topics to obtain the target position, drone pose, connection state, armed state, and flight mode. It uses a state machine to manage the mission and sends velocity, arm/disarm, and mode commands through MAVROS.
-
-5. **MAVROS** acts as the ROS 2 ↔ MAVLink interface between the Mission Controller and ArduPilot, providing telemetry to ROS 2 and forwarding commands to the flight controller.
-
-6. **ArduPilot** receives the commands through MAVLink and performs the low-level flight control of the drone.
-
----
-
+1. Gazebo publishes the downward camera stream as `gz.msgs.Image`.
+2. `ros_gz_bridge` remaps the Gazebo image into `/camera/image_raw`.
+3. `vision_tracker_node` detects the red target in OpenCV and publishes pixel coordinates on `/target_pixel`.
+4. `mission_control_node` consumes the target pixel stream and MAVROS telemetry to drive the state machine.
+5. MAVROS forwards commands and telemetry between ROS 2 and ArduPilot.
+6. ArduPilot executes the low-level flight control.
 
 ## Mission State Machine
 
-The node is driven by a single-threaded, timer-based (20 Hz) state machine (`MissionState` enum) executed in `control_loop()`. Each state is polled on every timer tick until its exit condition is met.
+The mission controller advances through these states:
 
-| State | Purpose | Exit Condition |
-|---|---|---|
-| `WAIT_FOR_CONNECTIONM` | Waits for a live MAVROS↔FCU heartbeat | `/mavros/state.connected == True` |
-| `SET_GUIDED_MODE` | Requests `GUIDED` flight mode via `/mavros/set_mode` | `/mavros/state.mode == "GUIDED"` |
-| `ARM` | Sends an arm request via `/mavros/cmd/arming` | `/mavros/state.armed == True` |
-| `TAKEOFF` | Calls `/mavros/cmd/takeoff` to climb to `takeoff_height` | Local pose `z ≥ takeoff_height - 0.2`. Also locks the current yaw (`target_orientation`) to be held for the rest of the mission |
-| `NAVIGATE_TO_TARGET` | Continuously publishes a global GPS setpoint (`/mavros/setpoint_position/global`) toward `(target_lat, target_lon, target_alt)` | Horizontal great-circle-approx distance to target `≤ navigation_threshold` (0.5 m) |
-| `SEARCH_TARGET` | Hovers (zero velocity) while checking `/target_pixel` for a valid detection | Target detected → `ALIGN_TARGET`. No target for `> 5 s` → commands `LAND` mode and moves to `FINISHED` |
-| `ALIGN_TARGET` | Centers the vehicle over the detected target using pixel-space PID (`vx`, `vy` from image error) | Error stays within `center_threshold` for `≥ 1 s` → `DESCEND`. Target lost → back to `SEARCH_TARGET` |
-| `DESCEND` | Continues horizontal PID correction while commanding a fixed downward velocity (`vz = -0.20 m/s`) | Local `z < 1.0 m` → `LAND`. Re-misaligned beyond threshold → back to `ALIGN_TARGET`. Target lost → `SEARCH_TARGET` |
-| `LAND` | Commands `LAND` flight mode via `/mavros/set_mode` | Local `z ≤ 0.5 m` → `FINISHED` |
-| `FINISHED` | Terminal state; logs completion, no further action | — |
+| State | Purpose |
+|---|---|
+| `WAIT_FOR_CONNECTIONM` | Wait for MAVROS/FCU heartbeat |
+| `SET_GUIDED_MODE` | Switch to `GUIDED` |
+| `ARM` | Arm the vehicle |
+| `TAKEOFF` | Climb to the configured takeoff height |
+| `NAVIGATE_TO_TARGET` | Fly to the GPS target |
+| `SEARCH_TARGET` | Hover and look for the target |
+| `ALIGN_TARGET` | Center over the detected target |
+| `DESCEND` | Continue alignment while descending |
+| `LAND` | Command landing mode |
+| `FINISHED` | End the mission |
 
-### Flow diagram
+## Notes
 
-```
-WAIT_FOR_CONNECTIONM
-        │ connected
-        ▼
- SET_GUIDED_MODE
-        │ mode == GUIDED
-        ▼
-      ARM
-        │ armed
-        ▼
-   TAKEOFF
-        │ z ≥ takeoff_height
-        ▼
-NAVIGATE_TO_TARGET ◄────────────┐
-        │ distance ≤ threshold  │
-        ▼                       │
- SEARCH_TARGET ──(target seen)──┘? (see note)
-   │        │
-   │ 5s no  │ target seen
-   │ target │
-   ▼        ▼
-FINISHED  ALIGN_TARGET ◄──┐
-  ▲          │            │ misaligned
-  │          │ centered   │
-  │          ▼ 1s         │
-  │       DESCEND ─────────┘
-  │          │  target lost
-  │          ▼ z < 1.0
-  │        LAND
-  │          │ z ≤ 0.5
-  └──────────┘
-```
-
-
-
-# Current State
-
-* 🟢 Implemented State machine with appropriate state switching.
-* 🟢 Drone aligns itself above the detected target
-* 🟢 Current vision planner detects the **red cylinder** and performs vision-based landing
-
-# Not Implemented
-
-* 🔴 GPS error simulation
-* 🔴 Search algorithm to compensate for the ~4 m GPS error
-* 🔴 Replacing the current red-cylinder detection with the QR-based target pipeline
-
-
+* `rpi5/` is ignored from `colcon build` by `setup.bash`.
+* `simulation/ardupilot_gazebo/` is fetched fresh by `setup.bash` and should not be committed.
+* `mav.tlog` and `mav.tlog.raw` are ignored because they are generated at runtime.
