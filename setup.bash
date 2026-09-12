@@ -23,9 +23,13 @@ require_ubuntu_2404() {
     fi
 }
 
+
+
 ensure_ros_source() {
     if [ -f /opt/ros/jazzy/setup.bash ]; then
+        set +u
         source /opt/ros/jazzy/setup.bash
+        set -u
         return 0
     fi
 
@@ -38,7 +42,9 @@ ensure_ros_source() {
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu ${codename} main" | sudo tee /etc/apt/sources.list.d/ros2.list >/dev/null
     sudo apt-get update
     sudo apt-get install -y ros-jazzy-desktop
+    set +u
     source /opt/ros/jazzy/setup.bash
+    set -u
 }
 
 ensure_gazebo_repo() {
